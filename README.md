@@ -73,7 +73,7 @@ cd /agent/panfind
 ```
 panfind/
 ├── api/                 # Express 搜索网关
-├── web/                 # Vite + React
+├── yunlan/              # 云览 YUNLAN 前端（Vite + React + TS）
 ├── scripts/
 │   ├── start-local.sh   # 本机一键（PanSou+API+Web）
 │   ├── run-live.sh

@@ -13,7 +13,12 @@ import { normalizeCloudTypes, probeUpstream } from "./search.js";
 import { searchMulti } from "./sources/aggregate.js";
 import { hunhepanEndpoints } from "./sources/hunhepan.js";
 import { resolveWeiboConfig, weiboStatusSummary } from "./sources/weibo.js";
+import { createAuthRouter } from "./auth/routes.js";
+import { getOrCreateClientId, getSessionFromRequest } from "./auth/cookies.js";
+import { createBillingRouter } from "./billing/routes.js";
+import { consumeSearchPoint, getQuotaStatus } from "./points/quota.js";
 import { getVersionInfo, getVersionSummary } from "./version.js";
+import { resolveShareMetaBatch } from "./share-meta.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -24,8 +29,36 @@ const ENABLE_EXT = !["0", "false", "no"].includes(String(process.env.ENABLE_EXT_
 const VERSION = getVersionSummary();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true, credentials: "include" }));
 app.use(express.json({ limit: "256kb" }));
+
+app.use("/api/auth", createAuthRouter());
+app.use("/api/billing", createBillingRouter());
+
+app.get("/api/points", (req, res) => {
+  const clientId = getOrCreateClientId(req, res);
+  const session = getSessionFromRequest(req);
+  res.json({
+    ok: true,
+    points: getQuotaStatus({ userId: session?.uid, clientId }),
+  });
+});
+
+app.post("/api/share-meta/batch", async (req, res) => {
+  try {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    if (items.length > 12) {
+      return res.status(400).json({ error: "单次最多查询 12 个分享链接" });
+    }
+    const metadata = await resolveShareMetaBatch(items);
+    res.json({ ok: true, metadata });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
 
 app.get("/api/health", async (_req, res) => {
   let upstream = null;
@@ -192,6 +225,23 @@ async function handleSearch(req, res) {
     return res.status(400).json({ error: "关键词过长", code: "KW_TOO_LONG" });
   }
 
+  const clientId = getOrCreateClientId(req, res);
+  const session = getSessionFromRequest(req);
+  let pointsAfter;
+  try {
+    pointsAfter = consumeSearchPoint({ userId: session?.uid, clientId });
+  } catch (err) {
+    if (err?.code === "INSUFFICIENT_POINTS") {
+      return res.status(402).json({
+        error: err.message,
+        code: "INSUFFICIENT_POINTS",
+        paywall: true,
+        points: getQuotaStatus({ userId: session?.uid, clientId }),
+      });
+    }
+    throw err;
+  }
+
   const cloudTypes = normalizeCloudTypes(body.cloud_types || body.cloudTypes);
   const enableExt =
     body.enable_ext === undefined
@@ -221,6 +271,7 @@ async function handleSearch(req, res) {
     cloudTypes,
     tookMs: Date.now() - started,
     sourceStats,
+    points: pointsAfter,
   });
 }
 
@@ -236,7 +287,7 @@ app.post("/api/search", (req, res) => {
   });
 });
 
-const webDist = path.join(ROOT, "web", "dist");
+const webDist = path.join(ROOT, "yunlan", "dist");
 app.use(express.static(webDist));
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api")) return next();

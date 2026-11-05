@@ -93,6 +93,17 @@ function resolvePassword(url, password) {
   }
 }
 
+function estimateFileCount(files) {
+  const text = stripHtml(files);
+  if (!text) return 0;
+  const positions = [...text.matchAll(/file:\s*[\u200b-\u200d\ufeff]*(\d+)/gi)]
+    .map((m) => Number(m[1]))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (positions.length) return Math.max(...positions);
+  const lines = text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  return lines.length;
+}
+
 /**
  * @param {string} apiURL
  * @param {string} keyword
@@ -200,6 +211,9 @@ export async function searchHunhepanFamily(kw, cloudTypes, timeoutMs = 12000) {
           source,
           datetime,
           note: title,
+          sizeBytes: Math.max(0, Number(item.size) || 0),
+          fileCount: estimateFileCount(item.files),
+          metaPartial: true,
         });
         kept += 1;
       }

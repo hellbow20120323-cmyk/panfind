@@ -38,9 +38,19 @@ export function mergeAndDedupe(batches, limit = 120) {
       const key = `${hit.cloudType}|${canonicalUrl(hit.url)}`;
       const prev = map.get(key);
       if (!prev || hit.score > prev.score) {
-        map.set(key, hit);
+        map.set(key, {
+          ...hit,
+          sizeBytes: hit.sizeBytes || prev?.sizeBytes || 0,
+          fileCount: hit.fileCount || prev?.fileCount || 0,
+          metaPartial: hit.metaPartial ?? prev?.metaPartial,
+        });
       } else if (prev && hit.source && !String(prev.source).includes(String(hit.source).split(":")[0])) {
         prev.source = `${prev.source}+${hit.source.split(":")[0]}`;
+        if (!prev.sizeBytes && hit.sizeBytes) prev.sizeBytes = hit.sizeBytes;
+        if (!prev.fileCount && hit.fileCount) prev.fileCount = hit.fileCount;
+        if (prev.metaPartial === undefined && hit.metaPartial !== undefined) {
+          prev.metaPartial = hit.metaPartial;
+        }
       }
     }
   }

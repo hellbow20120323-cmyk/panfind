@@ -1,0 +1,112 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React from 'react';
+import { ALL_PROVIDER_IDS, DISK_PROVIDERS } from '../constants/providers';
+import { ExternalLink, Zap, Check, Search } from 'lucide-react';
+import { DiskProviderId } from '../types';
+
+interface DiskNavigationGridProps {
+  onSearchProvider: (id: DiskProviderId) => void;
+}
+
+export const DiskNavigationGrid: React.FC<DiskNavigationGridProps> = ({
+  onSearchProvider,
+}) => {
+  return (
+    <div className="w-full max-w-6xl mx-auto py-8">
+      {/* Title */}
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          聚合云盘引擎导航与矩阵
+        </h2>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+          全面兼容国内 10 大主流云盘平台，一站式对比平台特性、限速策略及特色格式支持
+        </p>
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {ALL_PROVIDER_IDS.map((id) => {
+          const p = DISK_PROVIDERS[id];
+
+          return (
+            <div
+              key={id}
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs group"
+            >
+              <div>
+                {/* Header */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span 
+                      className="w-3.5 h-3.5 rounded-full" 
+                      style={{ backgroundColor: p.color }} 
+                    />
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 transition-colors">
+                      {p.name}
+                    </h3>
+                  </div>
+
+                  {/* Speed Badge */}
+                  <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                    <Zap className="w-3 h-3" />
+                    <span>转存{p.speedRating}</span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">
+                  {p.description}
+                </p>
+
+                {/* Features list */}
+                <div className="space-y-1.5 mb-4">
+                  {p.features.map((feat, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <Check className="w-3 h-3 text-cyan-500 shrink-0" />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Formats */}
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-5 flex-wrap">
+                  <span className="text-slate-400">常用格式:</span>
+                  {p.supportedFormats.map((fmt, i) => (
+                    <span key={i} className="font-mono text-slate-600 dark:text-slate-400">
+                      {fmt}{i < p.supportedFormats.length - 1 ? ' ·' : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => onSearchProvider(id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 rounded-lg transition-colors"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>检索该网盘</span>
+                </button>
+
+                <a
+                  href={p.officialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  <span>官网直达</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

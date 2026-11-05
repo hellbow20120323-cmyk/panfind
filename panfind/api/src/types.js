@@ -11,6 +11,9 @@
  * @property {string} source
  * @property {string} [datetime]
  * @property {string} [note]
+ * @property {number} [sizeBytes]
+ * @property {number} [fileCount]
+ * @property {boolean} [metaPartial]
  */
 
 /**

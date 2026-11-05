@@ -92,7 +92,7 @@ cd /agent/panfind
 ```
 panfind/
 ├── api/                 # Express 搜索网关（含 weibo / extract / aggregate）
-├── web/                 # Vite + React
+├── yunlan/              # 云览 YUNLAN 前端（对接 /api/*）
 ├── docs/
 │   ├── multi-source.md
 │   └── weibo-source.md  # Cookie/UID 配置与合规说明
